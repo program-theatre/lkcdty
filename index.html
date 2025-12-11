@@ -1,98 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Elf, Jr. Program</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Elf, Jr. Program</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      background: #f0f0f0; /* lighter gray = stronger “float” contrast */
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-    }
+  <style>
+    body {
+      margin: 0;
+      background: #f0f0f0; /* lighter gray = stronger “float” contrast */
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+    }
 
-    #pdf-viewer {
-      width: 100%;
-      max-width: 900px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 0;
-    }
+    #pdf-viewer {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
 
-    .page {
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-      margin: 12px 0;
-      width: 96%;
-      max-width: 850px;
-      border-radius: 6px;
-      overflow: hidden;
-      transition: box-shadow 0.3s ease;
-    }
+    .page {
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      margin: 12px 0;
+      width: 96%;
+      max-width: 850px;
+      border-radius: 6px;
+      overflow: hidden;
+      transition: box-shadow 0.3s ease;
+    }
 
-    .page:hover {
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    }
+    .page:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
 
-    canvas {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
 
-    /* ✅ Mobile improvements: keeps float but tightens spacing */
-    @media (max-width: 768px) {
-      body {
-        background: #e8e8e8; /* slightly lighter gray than before */
-      }
+    /* ✅ Mobile improvements: keeps float but tightens spacing */
+    @media (max-width: 768px) {
+      body {
+        background: #e8e8e8; /* slightly lighter gray than before */
+      }
 
-      #pdf-viewer {
-        width: 100%;
-        padding: 10px 0;
-      }
+      #pdf-viewer {
+        width: 100%;
+        padding: 10px 0;
+      }
 
-      .page {
-        margin: 10px 0;
-        width: 92%;           /* small side margins for “air” */
-        box-shadow: 0 1px 8px rgba(0,0,0,0.12);
-        border-radius: 4px;
-      }
-    }
-  </style>
+      .page {
+        margin: 10px 0;
+        width: 92%;           /* small side margins for “air” */
+        box-shadow: 0 1px 8px rgba(0,0,0,0.12);
+        border-radius: 4px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <div id="pdf-viewer"></div>
+  <div id="pdf-viewer"></div>
 
-  <script>
-    const url = 'elf.pdf';
-    const container = document.getElementById('pdf-viewer');
+  <script>
+    // List of PDF URLs in the order they should be displayed
+    const pdfUrls = ['elf-part-1.pdf', 'elf-part-2.pdf'];
+    const container = document.getElementById('pdf-viewer');
 
-    pdfjsLib.getDocument(url).promise.then(pdf => {
-      for (let i = 1; i <= pdf.numPages; i++) {
-        pdf.getPage(i).then(page => {
-          const scale = window.innerWidth < 768 ? 1.2 : 1.5;
-          const viewport = page.getViewport({ scale });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
+    // Function to render pages from a single PDF document
+    function renderPdfPages(pdf) {
+      for (let i = 1; i <= pdf.numPages; i++) {
+        // Using a closure/promise chain to ensure correct page numbers and order
+        pdf.getPage(i).then(page => {
+          // Adjust scale based on screen width for better responsiveness
+          const scale = window.innerWidth < 768 ? 1.2 : 1.5;
+          const viewport = page.getViewport({ scale });
+          
+          // Create canvas for rendering
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
 
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
 
-          const wrapper = document.createElement('div');
-          wrapper.classList.add('page');
-          wrapper.appendChild(canvas);
-          container.appendChild(wrapper);
+          // Create wrapper div for styling and shadow
+          const wrapper = document.createElement('div');
+          wrapper.classList.add('page');
+          wrapper.appendChild(canvas);
+          
+          // Append the page to the container
+          container.appendChild(wrapper);
 
-          page.render({ canvasContext: context, viewport });
-        });
-      }
-    });
-  </script>
+          // Render the page content
+          page.render({ canvasContext: context, viewport });
+        });
+      }
+    }
+
+    // Function to process all PDFs sequentially
+    async function loadAndRenderAllPdfs() {
+      for (const url of pdfUrls) {
+        try {
+          const pdf = await pdfjsLib.getDocument(url).promise;
+          renderPdfPages(pdf);
+        } catch (error) {
+          console.error(`Error loading or rendering PDF: ${url}`, error);
+          // Optionally display an error message in the viewer
+          const errorDiv = document.createElement('div');
+          errorDiv.textContent = `Could not load part: ${url}`;
+          errorDiv.style.color = 'red';
+          container.appendChild(errorDiv);
+        }
+      }
+    }
+
+    // Start the process
+    loadAndRenderAllPdfs();
+  </script>
 </body>
 </html>
