@@ -71,35 +71,35 @@
 
 <script>
 
-    const urls = ['elf-part-1.pdf', 'elf-part-2.pdf'];   // two-part magic 🔥
+    const urls = ['elf-part-1.pdf', 'elf-part-2.pdf'];
     const container = document.getElementById('pdf-viewer');
 
-    // Renders each PDF in order
+    // Render a single PDF, page-by-page, in strict order
     async function renderPDF(url) {
       const pdf = await pdfjsLib.getDocument(url).promise;
 
       for (let i = 1; i <= pdf.numPages; i++) {
-        pdf.getPage(i).then(page => {
+        const page = await pdf.getPage(i);
 
-          const scale = window.innerWidth < 768 ? 1.2 : 1.5;
-          const viewport = page.getViewport({ scale });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
+        const scale = window.innerWidth < 768 ? 1.2 : 1.5;
+        const viewport = page.getViewport({ scale });
 
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
 
-          const wrapper = document.createElement('div');
-          wrapper.classList.add('page');
-          wrapper.appendChild(canvas);
-          container.appendChild(wrapper);
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('page');
+        wrapper.appendChild(canvas);
+        container.appendChild(wrapper);
 
-          page.render({ canvasContext: context, viewport });
-        });
+        // Wait for a full render before moving on
+        await page.render({ canvasContext: context, viewport }).promise;
       }
     }
 
-    // Load part 1 → then part 2, same viewer, seamless
+    // Render part 1 → THEN part 2
     (async () => {
       for (const url of urls) {
         await renderPDF(url);
@@ -107,6 +107,7 @@
     })();
 
 </script>
+
 
 </body>
 </html>
