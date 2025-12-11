@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Beetlejuice, Jr. Program</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: #f0f0f0; /* lighter gray = stronger “float” contrast */
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+    }
+
+    #pdf-viewer {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
+
+    .page {
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      margin: 12px 0;
+      width: 96%;
+      max-width: 850px;
+      border-radius: 6px;
+      overflow: hidden;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .page:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ✅ Mobile improvements: keeps float but tightens spacing */
+    @media (max-width: 768px) {
+      body {
+        background: #e8e8e8; /* slightly lighter gray than before */
+      }
+
+      #pdf-viewer {
+        width: 100%;
+        padding: 10px 0;
+      }
+
+      .page {
+        margin: 10px 0;
+        width: 92%;           /* small side margins for “air” */
+        box-shadow: 0 1px 8px rgba(0,0,0,0.12);
+        border-radius: 4px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="pdf-viewer"></div>
+
+  <script>
+    const url = 'elf.pdf';
+    const container = document.getElementById('pdf-viewer');
+
+    pdfjsLib.getDocument(url).promise.then(pdf => {
+      for (let i = 1; i <= pdf.numPages; i++) {
+        pdf.getPage(i).then(page => {
+          const scale = window.innerWidth < 768 ? 1.2 : 1.5;
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          const wrapper = document.createElement('div');
+          wrapper.classList.add('page');
+          wrapper.appendChild(canvas);
+          container.appendChild(wrapper);
+
+          page.render({ canvasContext: context, viewport });
+        });
+      }
+    });
+  </script>
+</body>
+</html>
